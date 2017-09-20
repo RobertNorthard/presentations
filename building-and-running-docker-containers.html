@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Title</title>
+    <meta charset="utf-8">
+    <style>
+      @import url(https://fonts.googleapis.com/css?family=Yanone+Kaffeesatz);
+      @import url(https://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic);
+      @import url(https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic);
+
+      body { font-family: 'Droid Serif'; }
+      h1, h2, h3 {
+        font-family: 'Yanone Kaffeesatz';
+        font-weight: normal;
+      }
+      .remark-code, .remark-inline-code { font-family: 'Ubuntu Mono'; }
+    </style>
+  </head>
+  <body>
+    <textarea id="source">
+
+class: center, middle
+
+# Building and running Docker containers
+
+@robertnorthard
+        
+---
+
+# Agenda
+
+1. Terminology
+2. Deep-dive
+3. ...
+
+---
+
+# Terminology
+        
+Term                 | Description
+-------------------- | -------------
+Docker Image         | package that contains all the dependencies to run an executable
+Container            | an instance of an image that can be start and stopped.
+Docker Daemon/Engine | manages the running of containers on a host
+Docker CLI           | CLI interacts with the Docker Engine
+Control Groups       | isolates container resources form one another
+Namespaces           | isolation of processes, limiting access to system resources
+Dockerfile           | Defines the instructions to build a Docker image
+copy-on-write (CoW)  | Faclitates fast process startup by only copying the running processes file-system on write operations
+        
+---
+
+# Dockerfile
+
+```bash
+FROM openjdk:8
+
+LABEL maintainer="john.smih@example.com"
+
+ENV APP_USER service \
+    APP_USER_ID 1001
+
+RUN useradd -m -d /opt/service ${APP_USER} -u ${APP_USER_ID}
+
+COPY target/service.jar /opt/service/service.jar
+
+RUN chown -R ${APP_USER_ID}:${APP_USER_ID} /opt/service \
+  && chmod 555 -R /opt/service
+
+USER ${APP_USER_ID}
+
+EXPOSE 8080/tcp
+
+WORKDIR /opt/service
+ENTRYPOINT [ "java" ]
+CMD [ "-jar", "service.jar" ]
+     
+```
+        
+---
+        
+# Building a Docker image and running
+        
+Build a Dockerfile
+        
+```
+docker build [OPTIONS] PATH | URL | -
+        
+e.g.
+docker build -t rootfs .
+docker build -t rootfs https://github.com/docker/rootfs.git#container:docker
+```
+        
+Run the image
+        
+```
+docker run [OPTIONS] IMAGE [COMMAND] [ARG...]
+```
+   
+---
+        
+# Some best practices...
+
+* Run containers as read-only
+* Limit containers resources via cgroups to prevent containers crashing the host if subject to a denial of service
+* Use lightweight Docker base image (Alpine, BusyBox) when possible
+* Combine *RUN* instructions into multiple lines rather than instructions
+* Check base image security scan report in the public Docker repository.
+* Build Docker images from the Dockerfile rather than using a Docker commit.
+* Run containers as a non-root user otherwise they execute with the same privileges as the host user
+  * Use UID when using the `USER` Dockerfile instruction. Name can be mapped to the root UID :'(
+* Use tags/Docker commit id when referencing base images to version lock, otherwise it uses the latest and greatest.
+* Containers are immutable - treat them so.
+        
+    </textarea>
+    <script src="https://remarkjs.com/downloads/remark-latest.min.js">
+    </script>
+    <script>
+      var slideshow = remark.create();
+    </script>
+  </body>
+</html>
