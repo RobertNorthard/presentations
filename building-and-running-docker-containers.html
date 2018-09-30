@@ -55,17 +55,14 @@ copy-on-write (CoW)  | Faclitates fast process startup by only copying the runni
 ```bash
 FROM openjdk:8
 
-LABEL maintainer="john.smih@example.com"
+LABEL maintainer="john.smith@example.com"
 
 ENV APP_USER service \
     APP_USER_ID 1001
 
 RUN useradd -m -d /opt/service ${APP_USER} -u ${APP_USER_ID}
 
-COPY target/service.jar /opt/service/service.jar
-
-RUN chown -R ${APP_USER_ID}:${APP_USER_ID} /opt/service \
-  && chmod 555 -R /opt/service
+COPY --chown=${APP_USER_ID}:${APP_USER_ID} target/service.jar /opt/service/service.jar
 
 USER ${APP_USER_ID}
 
